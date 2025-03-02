@@ -32,7 +32,7 @@ pub static BIG_DICKS_TO: LazyLock<String> = LazyLock::new(|| {
     │and big dicks to{} │
     └───────────────────┘", " √".green()).bright_black().to_string()
 });
-
+#[derive(Clone)]
 pub struct LogoBuilder {
     information: Vec<(&'static str, &'static str)>,
     pub extra_info: Vec<(&'static str, usize)>,

@@ -1,5 +1,4 @@
 use std::sync::LazyLock;
-
 use colored::Colorize;
 use strip_ansi_escapes::strip_str;
 use unicode_width::UnicodeWidthStr;
@@ -15,7 +14,7 @@ const RIGHT_CHAR_INFO: &str = "]";
 
 pub static LOGO_PRINT: LazyLock<String> = LazyLock::new(|| {
     format!(
-      "  ____  _         ____            _              _____ _       _     
+        "  ____  _         ____            _              _____ _       _     
  |  _ \\(_)       |  _ \\          (_)            / ____| |     | |    
  | |_) |_  __ _  | |_) |_ __ __ _ _ _ __  ___  | |    | |_   _| |__  
  |  _ <| |/ _` | |  _ <| '__/ _` | | '_ \\/ __| | |    | | | | | '_ \\ 
@@ -23,19 +22,26 @@ pub static LOGO_PRINT: LazyLock<String> = LazyLock::new(|| {
  |____/|_|\\__, | |____/|_|  \\__,_|_|_| |_|___/  \\_____|_|\\__,_|_.__/ 
            __/ |
           |___/")
-    .bright_red()
-    .to_string()
+        .bright_red()
+        .to_string()
 });
+
 pub static BIG_DICKS_TO: LazyLock<String> = LazyLock::new(|| {
-    format!("
+    format!(
+        "
     ┌───────────────────┐
     │and big dicks to{} │
-    └───────────────────┘", " √".green()).bright_black().to_string()
+    └───────────────────┘",
+        " √".green()
+    )
+    .bright_black()
+    .to_string()
 });
+
 #[derive(Clone)]
 pub struct LogoBuilder {
     information: Vec<(&'static str, &'static str)>,
-    pub extra_info: Vec<(&'static str, usize)>,
+    pub extra_info: Vec<(&'static str, Option<usize>)>,
     splitter: &'static str,
     custom_header: Option<&'static str>,
 }
@@ -43,7 +49,7 @@ pub struct LogoBuilder {
 impl LogoBuilder {
     pub fn new(
         information: Vec<(&'static str, &'static str)>,
-        extra_info: Vec<(&'static str, usize)>,
+        extra_info: Vec<(&'static str, Option<usize>)>,
         splitter: &'static str,
     ) -> Self {
         Self {
@@ -65,7 +71,8 @@ impl LogoBuilder {
     }
 
     pub fn render(&self) -> String {
-        let left_max_width = self.information
+        let left_max_width = self
+            .information
             .iter()
             .map(|(k, v)| {
                 Self::calculate_visible_width(LEFT_CHAR_INFO)
@@ -101,7 +108,7 @@ impl LogoBuilder {
             let total_padding = left_max_width.saturating_sub(visible_width);
             let left_padding = total_padding / 2;
             let right_padding = total_padding - left_padding;
-            
+
             let line = format!(
                 "{}{}{}{}{}",
                 VERTICAL_CHAR,
@@ -132,7 +139,10 @@ impl LogoBuilder {
 
             let right_content = if i < self.extra_info.len() {
                 let (key, value) = &self.extra_info[i];
-                format!(" {}: {}", key, value)
+                match value {
+                    Some(num) => format!(" {}: {}", key, num),
+                    None => format!(" {}", key),
+                }
             } else {
                 String::new()
             };
@@ -150,8 +160,6 @@ impl LogoBuilder {
 
 #[cfg(test)]
 mod tests {
-    use colored::Colorize;
-
     use super::*;
 
     #[test]
@@ -162,17 +170,21 @@ mod tests {
                 ("Ссылка".green().to_string().leak(), "https://lolz.live"),
                 ("Тема".green().to_string().leak(), "https://lolz.live/threads"),
             ],
-            vec![("тест", 623), ("test", 6463), ("test", 3253), ("test", 023), ("tweijtew", 2353)],
+            vec![
+                ("тест", Some(623)),
+                ("test", None),
+                ("empty", None),
+            ],
             "=>"
         )
-        .with_custom_header("LOGO_PREV");
+        .with_custom_header("CUSTOM_HEADER".yellow().to_string().leak());
 
         let output = format!("{}\n{}\n{}", *LOGO_PRINT, *BIG_DICKS_TO, logo.render());
         println!("{}", output);
         
-        assert!(
-            output.contains("LOGO_PREV"),
-            "Заголовок не отрендерился"
-        );
+        assert!(output.contains("CUSTOM_HEADER"));
+        assert!(output.contains("тест: 623"));
+        assert!(output.contains(" test"));
+        assert!(!output.contains("test:"));
     }
 }

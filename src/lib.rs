@@ -35,7 +35,7 @@ pub static BIG_DICKS_TO: LazyLock<String> = LazyLock::new(|| {
 
 pub struct LogoBuilder {
     information: Vec<(&'static str, &'static str)>,
-    extra_info: Vec<(&'static str, usize)>,
+    pub extra_info: Vec<(&'static str, usize)>,
     splitter: &'static str,
     custom_header: Option<&'static str>,
 }

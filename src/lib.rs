@@ -40,7 +40,7 @@ pub static BIG_DICKS_TO: LazyLock<String> = LazyLock::new(|| {
 
 #[derive(Clone)]
 pub struct LogoBuilder {
-    information: Vec<(&'static str, &'static str)>,
+    information: Vec<(&'static str, Option<&'static str>)>,
     pub extra_info: Vec<(&'static str, Option<usize>)>,
     splitter: &'static str,
     custom_header: Option<&'static str>,
@@ -48,7 +48,7 @@ pub struct LogoBuilder {
 
 impl LogoBuilder {
     pub fn new(
-        information: Vec<(&'static str, &'static str)>,
+        information: Vec<(&'static str, Option<&'static str>)>,
         extra_info: Vec<(&'static str, Option<usize>)>,
         splitter: &'static str,
     ) -> Self {
@@ -74,13 +74,21 @@ impl LogoBuilder {
         let left_max_width = self
             .information
             .iter()
-            .map(|(k, v)| {
-                Self::calculate_visible_width(LEFT_CHAR_INFO)
-                    + Self::calculate_visible_width(k)
-                    + Self::calculate_visible_width(RIGHT_CHAR_INFO)
-                    + Self::calculate_visible_width(self.splitter)
-                    + Self::calculate_visible_width(v)
-                    + 4
+            .map(|(k, v)| match v {
+                Some(value) => {
+                    Self::calculate_visible_width(LEFT_CHAR_INFO)
+                        + Self::calculate_visible_width(k)
+                        + Self::calculate_visible_width(RIGHT_CHAR_INFO)
+                        + Self::calculate_visible_width(self.splitter)
+                        + Self::calculate_visible_width(value)
+                        + 4
+                }
+                None => {
+                    Self::calculate_visible_width(LEFT_CHAR_INFO)
+                        + Self::calculate_visible_width(k)
+                        + Self::calculate_visible_width(RIGHT_CHAR_INFO)
+                        + 2
+                }
             })
             .max()
             .unwrap_or(0);
@@ -109,16 +117,14 @@ impl LogoBuilder {
             let left_padding = total_padding / 2;
             let right_padding = total_padding - left_padding;
 
-            let line = format!(
-                "{}{}{}{}{}",
+            result.push_str(&format!(
+                "{}{}{}{}{}\n",
                 VERTICAL_CHAR,
                 " ".repeat(left_padding),
                 header,
                 " ".repeat(right_padding),
                 VERTICAL_CHAR
-            );
-            result.push_str(&line);
-            result.push('\n');
+            ));
         }
 
         let total_rows = self.information.len().max(self.extra_info.len());
@@ -126,10 +132,13 @@ impl LogoBuilder {
         for i in 0..total_rows {
             let left_content = if i < self.information.len() {
                 let (key, value) = &self.information[i];
-                let content = format!(
-                    " {}{}{}{} {} ",
-                    LEFT_CHAR_INFO, key, RIGHT_CHAR_INFO, self.splitter, value
-                );
+                let content = match value {
+                    Some(v) => format!(
+                        " {}{}{}{} {} ",
+                        LEFT_CHAR_INFO, key, RIGHT_CHAR_INFO, self.splitter, v
+                    ),
+                    None => format!(" {}{}{} ", LEFT_CHAR_INFO, key, RIGHT_CHAR_INFO),
+                };
                 let visible_width = Self::calculate_visible_width(&content);
                 let padding = left_max_width.saturating_sub(visible_width);
                 format!("{}{}", content, " ".repeat(padding))
@@ -154,7 +163,7 @@ impl LogoBuilder {
         }
 
         result.push_str(&bottom_line);
-        result
+        format!("{}{}\n{}", *LOGO_PRINT, *BIG_DICKS_TO, result)
     }
 }
 
@@ -166,25 +175,26 @@ mod tests {
     fn test_logo() {
         let logo = LogoBuilder::new(
             vec![
-                ("telegram".bright_blue().to_string().leak(), "@MolodostVnutri"),
-                ("Ссылка".green().to_string().leak(), "https://lolz.live"),
-                ("Тема".green().to_string().leak(), "https://lolz.live/threads"),
+                ("telegram", Some("@MolodostVnutri")),
+                ("Ссылка", None),
+                ("Тема", Some("https://lolz.live/threads")),
             ],
             vec![
                 ("тест", Some(623)),
                 ("test", None),
-                ("empty", None),
             ],
             "=>"
         )
-        .with_custom_header("CUSTOM_HEADER".yellow().to_string().leak());
+        .with_custom_header("TESTING");
 
-        let output = format!("{}\n{}\n{}", *LOGO_PRINT, *BIG_DICKS_TO, logo.render());
+        let output = logo.render();
         println!("{}", output);
         
-        assert!(output.contains("CUSTOM_HEADER"));
+        assert!(output.contains("[telegram] => @MolodostVnutri"));
+        assert!(output.contains("[Ссылка]"));
+        assert!(!output.contains("[Ссылка] =>"));
+        
         assert!(output.contains("тест: 623"));
-        assert!(output.contains(" test"));
-        assert!(!output.contains("test:"));
+        assert!(!output.contains(" test"));
     }
 }

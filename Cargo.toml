@@ -1,0 +1,9 @@
+[package]
+name = "big_brains_club_logo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+colored = "3.0.0"
+unicode-width = "0.2.0"
+strip-ansi-escapes = "0.2.1"

@@ -42,7 +42,7 @@ mod tests {
         ])
         
         .with_custom_header("TESTING")
-        .entry_extra("test", 623);
+        .entry_extra("test", Some(623));
         
 
         let output = logo.render();

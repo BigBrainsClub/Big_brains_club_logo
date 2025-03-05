@@ -5,17 +5,21 @@ use crate::{static_data::{BIG_DICKS_TO, LOGO_PRINT}, LogoBuilder};
 
 
 impl LogoBuilder {
-    pub fn entry_extra(&mut self, key: &str, new_value: usize) -> &mut Self {
-        match self.extra_info.get_mut(key) {
-            Some(value) => {
-                match value {
-                    Some(value) => *value += new_value,
-                    None => *value = Some(new_value)
+    pub fn entry_extra(&mut self, key: &str, new_value: Option<usize>) -> &mut Self {
+        if let Some(new_value) = new_value {
+            match self.extra_info.get_mut(key) {
+                Some(value) => {
+                    match value {
+                        Some(value) => *value += new_value,
+                        None => *value = Some(new_value)
+                    }
+                },
+                None => {
+                    self.extra_info.insert(key.to_string().leak(), Some(new_value));
                 }
-            },
-            None => {
-                self.extra_info.insert(key.to_string().leak(), Some(new_value));
             }
+        } else {
+            self.extra_info.insert(key.to_string().leak(), None);
         }
         self
     }
